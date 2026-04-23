@@ -1,4 +1,4 @@
-import uuid #genrates Client ID
+import uuid
 from decimal import Decimal
 from datetime import date
 import streamlit as st
@@ -11,22 +11,22 @@ st.set_page_config(
     layout="wide",
 )
 
-
 db.init_db()
 
-# Session management — each browser tab gets unique session
-# Persist session_id in URL so refresh doesn't lose data
+# Session management
 if "session_id" not in st.query_params:
     new_id = str(uuid.uuid4())
     st.query_params["session_id"] = new_id
 
 session_id = st.query_params["session_id"]
-st.session_state.session_id = session_id
-
-session_id = st.session_state.session_id
 
 st.title("₹ Expense Tracker")
 st.caption("Your personal expense tracker — data is private to your session.")
+st.info("""
+🔒 Your data is private to your session.  
+📎 Bookmark this page to return to your data later.  
+🔗 To invite others, share the base link without the session ID — they'll get their own fresh session.
+""")
 
 # Metrics
 all_expenses = db.get_expenses(session_id=session_id)
@@ -40,7 +40,6 @@ m3.metric("Average Expense", f"₹{avg_all:,.2f}")
 
 st.divider()
 
-# Form
 st.subheader("Add New Expense")
 
 with st.form("add_expense_form", clear_on_submit=True):
@@ -76,20 +75,20 @@ if submitted:
         st.rerun()
     except ValueError as e:
         st.error(str(e))
-        
+
 st.divider()
 st.subheader("Your Expenses")
 
 col1, col2 = st.columns(2)
 
 with col1:
-    selected_category = st.selectbox("Filter by Category", 
+    selected_category = st.selectbox("Filter by Category",
         ["All", "Food & Dining", "Transport", "Shopping",
         "Entertainment", "Health & Medical",
         "Utilities & Bills", "Rent", "Education", "Other"])
 
 with col2:
-    sort_order = st.selectbox("Sort by Date", 
+    sort_order = st.selectbox("Sort by Date",
         ["Newest First", "Oldest First"])
 
 expenses = db.get_expenses(
@@ -114,7 +113,6 @@ else:
     total = sum(e["amount_rupees"] for e in expenses)
     st.markdown(f"### Total: ₹{total:,.2f}")
 
-    # Category summary
     st.subheader("Summary by Category")
     from collections import defaultdict
     cat_totals = defaultdict(Decimal)
