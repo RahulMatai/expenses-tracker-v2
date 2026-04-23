@@ -56,5 +56,3 @@ def get_expenses(session_id, category=None, sort_by_date_desc=True):
         result.append(row)
 
     return result
-def delete_expense(expense_id: int):
-    supabase.table("expenses").delete().eq("id", expense_id).execute()
