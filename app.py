@@ -50,7 +50,7 @@ with st.form("add_expense_form", clear_on_submit=True):
         "Utilities & Bills", "Rent", "Education", "Other"
     ])
     description = st.text_input("Description", placeholder="e.g. Lunch at canteen")
-    expense_date = st.date_input("Date", value=date.today())
+    expense_date = st.date_input("Date", value=date.today(), max_value=date.today())
     submitted = st.form_submit_button("Add Expense")
 
 if submitted:
