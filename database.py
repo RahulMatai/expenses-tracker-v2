@@ -1,9 +1,10 @@
 import os
 from decimal import Decimal
-from dotenv import load_dotenv
+import streamlit as st
+#from dotenv import load_dotenv
 from supabase import create_client, Client
 
-load_dotenv()
+#load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
