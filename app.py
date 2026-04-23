@@ -4,6 +4,7 @@ from datetime import date
 import streamlit as st
 import database as db
 import pandas as pd
+from collections import defaultdict
 
 st.set_page_config(
     page_title="Expense Tracker",
@@ -100,21 +101,31 @@ expenses = db.get_expenses(
 if not expenses:
     st.info("No expenses yet. Add your first expense above!")
 else:
-    table_data = [{
-        "Date": e["date"],
-        "Category": e["category"],
-        "Description": e["description"],
-        "Amount (₹)": f"₹{e['amount_rupees']:,.2f}"
-    } for e in expenses]
+    # Header row
+    h1, h2, h3, h4, h5 = st.columns([2, 2, 3, 2, 1])
+    h1.markdown("**Date**")
+    h2.markdown("**Category**")
+    h3.markdown("**Description**")
+    h4.markdown("**Amount**")
+    h5.markdown("**Del**")
 
-    df = pd.DataFrame(table_data)
-    st.dataframe(df, use_container_width=True)
+    st.divider()
 
+    for e in expenses:
+        c1, c2, c3, c4, c5 = st.columns([2, 2, 3, 2, 1])
+        c1.write(e["date"])
+        c2.write(e["category"])
+        c3.write(e["description"] or "—")
+        c4.write(f"₹{e['amount_rupees']:,.2f}")
+        if c5.button("🗑️", key=f"delete_{e['id']}"):
+            db.delete_expense(e["id"])
+            st.rerun()
+
+    st.divider()
     total = sum(e["amount_rupees"] for e in expenses)
     st.markdown(f"### Total: ₹{total:,.2f}")
 
     st.subheader("Summary by Category")
-    from collections import defaultdict
     cat_totals = defaultdict(Decimal)
     for e in expenses:
         cat_totals[e["category"]] += e["amount_rupees"]
