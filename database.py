@@ -3,7 +3,7 @@ from decimal import Decimal
 import streamlit as st
 from dotenv import load_dotenv
 from supabase import create_client, Client
-
+from datetime import date as date_type
 load_dotenv()
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -20,6 +20,8 @@ def create_expense(client_id, amount, category, description, date, session_id):
         raise ValueError("Category is required.")
     if not date:
         raise ValueError("Date is required.")
+    if date > date_type.today().isoformat():
+        raise ValueError("Date cannot be in the future.")
 
     amount_paise = int(Decimal(str(amount)) * 100)
 
