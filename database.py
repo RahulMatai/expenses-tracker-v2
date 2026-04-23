@@ -1,76 +1,55 @@
-import sqlite3
+import os
 from decimal import Decimal
-from pathlib import Path #handling paths
-from typing import Optional #for hints 
+from dotenv import load_dotenv
+from supabase import create_client, Client
 
-DB_path = Path("expenses.db") #sql path (file path)
+load_dotenv()
 
-def get_connection():
-    conn = sqlite3.connect(DB_path, check_same_thread=False)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    return conn
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 def init_db():
-    conn = get_connection()
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS expenses (
-            id              INTEGER PRIMARY KEY AUTOINCREMENT,
-            client_id       TEXT NOT NULL UNIQUE,
-            amount_paise    INTEGER NOT NULL,
-            category        TEXT NOT NULL,
-            description     TEXT NOT NULL DEFAULT '',
-            date            TEXT NOT NULL,
-            created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
-        )
-    """)
-    conn.commit()
-    conn.close()
+    pass  # Supabase table already created via SQL editor
 
-def create_expense(client_id, amount, category, description, date):
+def create_expense(client_id, amount, category, description, date, session_id):
     if amount <= 0:
         raise ValueError("Amount must be greater than zero.")
     if not category.strip():
         raise ValueError("Category is required.")
     if not date:
         raise ValueError("Date is required.")
-    
-    amount_paise = int(Decimal(str(amount)) * 100) #safe convertion for paisa
-    
-    conn = get_connection()
-    try:
-        conn.execute("""
-            INSERT INTO expenses (client_id, amount_paise, category, description, date)
-            VALUES (?, ?, ?, ?, ?)
-        """, (client_id, amount_paise, category, description, date))
-        conn.commit()
-    except sqlite3.IntegrityError: #duplicate entry Ignored
-        pass  # duplicate client_id — safe to ignore
-    finally:
-        conn.close()
 
-def get_expenses(category=None, sort_by_date_desc=True):
-    conn = get_connection()
-    
-    query = "SELECT * FROM expenses"
-    params = []
-    
-    if category and category != "All": # if all we skip where clause  saving potensial bandwidth
-        query += " WHERE category = ?"
-        params.append(category)
-    
+    amount_paise = int(Decimal(str(amount)) * 100)
+
+    try:
+        result = supabase.table("expenses").insert({
+            "client_id": client_id,
+            "session_id": session_id,
+            "amount_paise": amount_paise,
+            "category": category.strip(),
+            "description": description.strip(),
+            "date": date,
+        }).execute()
+        print(result)
+    except Exception as e:
+        print("Error",e)# duplicate client_id — idempotent, safe to ignore
+def get_expenses(session_id, category=None, sort_by_date_desc=True):
+    query = supabase.table("expenses").select("*").eq("session_id", session_id)
+
+    if category and category != "All":
+        query = query.eq("category", category)
+
     if sort_by_date_desc:
-        query += " ORDER BY date DESC"
+        query = query.order("date", desc=True)
     else:
-        query += " ORDER BY date ASC"
-    
-    rows = conn.execute(query, params).fetchall()
-    conn.close()
-    
+        query = query.order("date", desc=False)
+
+    response = query.execute()
+
     result = []
-    for row in rows:
-        d = dict(row)
-        d["amount_rupees"] = Decimal(d["amount_paise"]) / 100 #added back as Decimal for display
-        result.append(d)
-    
+    for row in response.data:
+        row["amount_rupees"] = Decimal(row["amount_paise"]) / 100
+        result.append(row)
+
     return result

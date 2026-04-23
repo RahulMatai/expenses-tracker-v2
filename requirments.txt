@@ -1,1 +1,4 @@
-8+g8C8K?,AuXyg2
+streamlit>=1.32.0
+supabase
+python-dotenv
+pandas
