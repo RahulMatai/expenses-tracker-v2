@@ -4,13 +4,8 @@ from supabase import create_client, Client
 from datetime import date as date_type
 
 def get_supabase_client():
-    try:
-        import streamlit as st
-        url = st.secrets.get("SUPABASE_URL") or os.getenv("SUPABASE_URL")
-        key = st.secrets.get("SUPABASE_KEY") or os.getenv("SUPABASE_KEY")
-    except Exception:
-        url = os.getenv("SUPABASE_URL")
-        key = os.getenv("SUPABASE_KEY")
+    url = os.getenv("SUPABASE_URL", "https://sqggjnscaljvkzufdovt.supabase.co")
+    key = os.getenv("SUPABASE_KEY", "sb_publishable_J0RV59HTK5GedlZteVy5tA_lN53-2XM")
     return create_client(url, key)
 
 supabase: Client = get_supabase_client()
